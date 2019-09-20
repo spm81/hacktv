@@ -90,8 +90,7 @@ static _vc_block_t _sky11_blocks[] = {
  			{ },
  			{ },
  			{ },
- 			{ 0xF8,0x19,0x10,0x83,0x20,0xD1,0xB5,0xA9,0x1F,0x82,0xFE,0xB3,0x6B,0x0A,0x82,0xC3,0x30,0x7B,0x65,0x9C,0xF2,0xBD,0x5C,0xB0,0x6A,0x3B,0x64,0x0F,0xA2,0x66,0xBB }	
-		},
+ 			{ 0xF8,0x19,0x10,0x83,0x20,0xD1,0xB5,0xA9,0x1F,0x82,0xFE,0xB3,0x6B,0x0A,0x82,0xC3,0x30,0x7B,0x65,0x9C,0xF2,0xBD,0x5C,0xB0,0x6A,0x3B,0x64,0x0F,0xA2,0x66,0xBB }		},
 	},
 };
 
@@ -172,7 +171,7 @@ static const _vc2_block_t _fa2_blocks[] = { { 0x9C, VC_PRBS_CW_FA } };
   * update the key in hex file at address 0000 in EEPROM data.
 */
 static const char tac_key[96]= {
-	0xd9, 0x45, 0x08, 0xdb, 0x7c, 0xf9, 0x56, 0xf7,
+  0xd9, 0x45, 0x08, 0xdb, 0x7c, 0xf9, 0x56, 0xf7,
   0x58, 0x18, 0x22, 0x54, 0x38, 0xcd, 0x3d, 0x94,
   0x09, 0xe6, 0x8e, 0x0d, 0x9a, 0x86, 0xfc, 0x1c,
   0xa0, 0x19, 0x8f, 0xbc, 0xfd, 0x8d, 0xd1, 0x57,
@@ -706,6 +705,9 @@ void _vc_rand_seed_sky09(_vc_block_t *s)
 	/* Mask high nibble of last byte as it's not used */
 	answ[7] &= 0x0f;
 		
+fprintf(stderr,"VBI-Data: ");
+    for (i = 0; i < 32; i++) fprintf(stderr,"%02x ",s->messages[6][i]);
+
 	/* Reverse calculated control word */
 	s->codeword = 0x000000000000000UL;
 	for(int i=0;i < 8; i++)	
@@ -713,6 +715,7 @@ void _vc_rand_seed_sky09(_vc_block_t *s)
 		d = answ[i];
 		s->codeword = d << (i * 8) | s->codeword;
 	}
+fprintf(stderr,"codeword: %0lX\n",s->codeword);
 }
 
 void _vc_rand_seed_sky07(_vc_block_t *s)
@@ -752,9 +755,11 @@ void _vc_rand_seed_sky07(_vc_block_t *s)
 	/* Mask high nibble of last byte as it's not used */
 	answ[7] &= 0x0f;
 	
+fprintf(stderr,"VBI-Data: "); for (i = 0; i < 32; i++) fprintf(stderr,"%02x ",s->messages[6][i]);
 	/* Reverse calculated control word */
 	s->codeword = 0x000000000000000UL;
 	for(int i=0;i < 8; i++)	s->codeword = answ[i] << (i * 8) | s->codeword;
+fprintf(stderr,"codeword: %0lX\n",s->codeword);
 }
 
 void _vc_rand_seed_xtea(_vc_block_t *s)
@@ -808,10 +813,11 @@ void _vc_rand_seed_xtea(_vc_block_t *s)
 	}
 	answ[7] &= 0x0f;
 	
+fprintf(stderr,"VBI-Data: "); for (i = 0; i < 32; i++) fprintf(stderr,"%02x ",s->messages[6][i]);
 	/* Reverse calculated control word */
 	s->codeword = 0x000000000000000UL;
 	for(int i=0;i < 8; i++)	s->codeword = answ[i] << (i * 8) | s->codeword;
-
+fprintf(stderr,"codeword: %0lX\n",s->codeword);
 }
 
 void _vc_kernel09(const unsigned char in, unsigned char *answ)
