@@ -715,7 +715,7 @@ fprintf(stderr,"VBI-Data: ");
 		d = answ[i];
 		s->codeword = d << (i * 8) | s->codeword;
 	}
-fprintf(stderr,"codeword: %0lX\n",s->codeword);
+fprintf(stderr,"codeword: %I64x\n",s->codeword);
 }
 
 void _vc_rand_seed_sky07(_vc_block_t *s)
@@ -759,7 +759,7 @@ fprintf(stderr,"VBI-Data: "); for (i = 0; i < 32; i++) fprintf(stderr,"%02x ",s-
 	/* Reverse calculated control word */
 	s->codeword = 0x000000000000000UL;
 	for(int i=0;i < 8; i++)	s->codeword = answ[i] << (i * 8) | s->codeword;
-fprintf(stderr,"codeword: %0lX\n",s->codeword);
+fprintf(stderr,"codeword: %I64x\n",s->codeword);
 }
 
 void _vc_rand_seed_xtea(_vc_block_t *s)
@@ -817,7 +817,7 @@ fprintf(stderr,"VBI-Data: "); for (i = 0; i < 32; i++) fprintf(stderr,"%02x ",s-
 	/* Reverse calculated control word */
 	s->codeword = 0x000000000000000UL;
 	for(int i=0;i < 8; i++)	s->codeword = answ[i] << (i * 8) | s->codeword;
-fprintf(stderr,"codeword: %0lX\n",s->codeword);
+fprintf(stderr,"codeword: %I64x\n",s->codeword);
 }
 
 void _vc_kernel09(const unsigned char in, unsigned char *answ)
