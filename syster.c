@@ -397,7 +397,7 @@ void _render_ng_vbi(ng_t *s, int line, int mode)
 		
 		if(s->vbi_seq == 0)
 		{
-			vbi[5] = mode; /* Table ID (0x68 = Discret 11 / 0x72 = Premiere / Canal+ Old, 0x48 = Clear, 0x7A or FA = Free access?) */
+			vbi[5] = mode; /* Table ID (0x71 = Discret 11 / 0x72 = Premiere / Canal+ Old, 0x48 = Clear, 0x7A or FA = Free access?) */
 			vbi[6] = ((_block_sequence[s->block_seq] >> 4) + s->block_seq2) & 0x07;
 			vbi[7] = (_block_sequence[s->block_seq] << 4) | _block_sequence[s->block_seq + 1];
 			
@@ -481,7 +481,7 @@ int d11_init(ng_t *s, vid_t *vid)
 	_ng_vbi_init(s,vid);
 	_ng_audio_init(s);
 	
-	s->d11_delay = (1 / s->vid->conf.colour_carrier) * 4 * s->vid->sample_rate;
+	s->d11_delay = (1 / 4433618.75) * 4 * s->vid->sample_rate;
 	
 	_create_d11_delay_table(s);
 
@@ -543,7 +543,7 @@ void d11_render_line(ng_t *s)
 			}	
 	}
 	
-	_render_ng_vbi(s,line,0x68);
+	_render_ng_vbi(s,line,0x71);
 }
 
 int ng_init(ng_t *s, vid_t *vid)
