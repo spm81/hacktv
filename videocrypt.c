@@ -45,7 +45,8 @@
 #include <inttypes.h>
 #include <math.h>
 #include "video.h"
-
+uint8_t keyctr;
+uint8_t eeprom;
 /* Packet header sequences */
 static const uint8_t _sequence[8] = {
 	0x87,0x96,0xA5,0xB4,0xC3,0xD2,0xE1,0x87,
@@ -102,7 +103,7 @@ static _vc_block_t _tac_blocks[] = {
 		{
 			{ 0x20 },
 			{ },
-			{ },
+			{ 0xC0, 0xF1, 0x00, 0x44, 0x33, 0x22, 0x11, 0x00, 0xFF, 0xFF, 0xFF },
 			{ },
 			{ },
 			{ },
@@ -116,7 +117,7 @@ static _vc_block_t _tac_blocks[] = {
 			 * The third byte is 0x60 + number of characters, followed by the ASCII characters themselves. */
 			{ 0x20,0x00,0x69,0x20,0x20,0x20,0x48,0x41,0x43,0x4B,0x54,0x56 },
 			{ },
-			{ },
+			{ 0xC0, 0xF1, 0x00, 0x44, 0x33, 0x22, 0x11, 0x00, 0xFF, 0xFF, 0xFF },
 			{ },
 			{ },
 			{ },
@@ -133,7 +134,7 @@ static _vc_block_t _sky09_blocks[] = {
 		{
  			{ 0x20 },
  			{ },
- 			{ },
+ 			{ 0xC0, 0xF1, 0x00, 0x44, 0x33, 0x22, 0x11, 0x00, 0xFF, 0xFF, 0xFF },
  			{ },
  			{ },
  			{ },
@@ -147,7 +148,7 @@ static _vc_block_t _sky09_blocks[] = {
 			 * The third byte is 0x60 + number of characters, followed by the ASCII characters themselves. */
  			{ 0x20,0x00,0x69,0x20,0x20,0x20,0x48,0x41,0x43,0x4B,0x54,0x56 },
  			{ },
- 			{ },
+ 			{ 0xC0, 0xF1, 0x00, 0x44, 0x33, 0x22, 0x11, 0x00, 0xFF, 0xFF, 0xFF },
  			{ },
  			{ },
  			{ },
@@ -462,15 +463,40 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2, const char *ke
 		/* Videocrypt I */
 		if(s->blocks)
 		{
-			if((s->counter & 7) == 0)
-			{
+			if((s->counter & 7) == 0){
 				/* The active message is updated every 8th frame. The last
 				 * message in the block is a duplicate of the first. */
+
+				if(mode && strcmp(mode,"conditional") == 0 && strcmp(key,"tac") == 0){
+					/* KEY-UPDATE as plaintext */
+					if((s->counter & 0x3F) == 0x10)
+					{ //fprintf(stderr,"KEY-UPDATE BLOCK \n");
+						s->blocks[s->block].messages[((s->counter >> 3) & 7) % 7][2] = eeprom+1;
+						for(x = 0; x < 16; x++){ s->blocks[s->block].messages[((s->counter >> 3) & 7) % 7][11+x] = tac_key[keyctr] & 0xff; keyctr++;}
+						eeprom++;
+						if(keyctr == 96){keyctr= 0;eeprom = 0;}
+					}
+                                        /* TODO:ENCRYPT KEYUPDATE */
+				}
+
+				if(mode && strcmp(mode,"conditional") == 0 && strcmp(key,"sky09") == 0){
+                                        /* KEY UPDATE as plaintext */
+					if((s->counter & 0x3F) == 0x10)
+                                        { //fprintf(stderr,"KEY-UPDATE BLOCK \n");
+                                                s->blocks[s->block].messages[((s->counter >> 3) & 7) % 7][2] = eeprom+7;
+                                                for(x = 0; x < 16; x++){ s->blocks[s->block].messages[((s->counter >> 3) & 7) % 7][11+x] = sky09_key[keyctr] & 0xff; keyctr++;}
+                                                eeprom++;
+						if(keyctr == 224){keyctr= 0;eeprom = 0;}
+                                        }
+					/* TODO:ENCRYPT KEYUPDATE */
+                                }
+				/* calculate checksum */
 				for(crc = x = 0; x < 31; x++)
 				{
 					crc += s->message[x] = s->blocks[s->block].messages[((s->counter >> 3) & 7) % 7][x];
+					//fprintf(stderr,"%02x ",s->blocks[s->block].messages[((s->counter >> 3) & 7) % 7][x]);
 				}
-				
+				//fprintf(stderr,"\n");
 				s->message[x] = ~crc + 1;
 			}
 			
@@ -705,8 +731,8 @@ void _vc_rand_seed_sky09(_vc_block_t *s)
 	/* Mask high nibble of last byte as it's not used */
 	answ[7] &= 0x0f;
 		
-fprintf(stderr,"VBI-Data: ");
-    for (i = 0; i < 32; i++) fprintf(stderr,"%02x ",s->messages[6][i]);
+// fprintf(stderr,"VBI-Data: ");
+//    for (i = 0; i < 32; i++) fprintf(stderr,"%02x ",s->messages[6][i]);
 
 	/* Reverse calculated control word */
 	s->codeword = 0x000000000000000UL;
@@ -715,7 +741,7 @@ fprintf(stderr,"VBI-Data: ");
 		d = answ[i];
 		s->codeword = d << (i * 8) | s->codeword;
 	}
-fprintf(stderr,"codeword: %I64lx\n",s->codeword);
+// fprintf(stderr,"codeword: %I64lx\n",s->codeword);
 }
 
 void _vc_rand_seed_sky07(_vc_block_t *s)
@@ -755,11 +781,11 @@ void _vc_rand_seed_sky07(_vc_block_t *s)
 	/* Mask high nibble of last byte as it's not used */
 	answ[7] &= 0x0f;
 	
-fprintf(stderr,"VBI-Data: "); for (i = 0; i < 32; i++) fprintf(stderr,"%02x ",s->messages[6][i]);
+// fprintf(stderr,"VBI-Data: "); for (i = 0; i < 32; i++) fprintf(stderr,"%02x ",s->messages[6][i]);
 	/* Reverse calculated control word */
 	s->codeword = 0x000000000000000UL;
 	for(int i=0;i < 8; i++)	s->codeword = answ[i] << (i * 8) | s->codeword;
-fprintf(stderr,"codeword: %I64lx\n",s->codeword);
+// fprintf(stderr,"codeword: %I64lx\n",s->codeword);
 }
 
 void _vc_rand_seed_xtea(_vc_block_t *s)
@@ -813,11 +839,11 @@ void _vc_rand_seed_xtea(_vc_block_t *s)
 	}
 	answ[7] &= 0x0f;
 	
-fprintf(stderr,"VBI-Data: "); for (i = 0; i < 32; i++) fprintf(stderr,"%02x ",s->messages[6][i]);
+// fprintf(stderr,"VBI-Data: "); for (i = 0; i < 32; i++) fprintf(stderr,"%02x ",s->messages[6][i]);
 	/* Reverse calculated control word */
 	s->codeword = 0x000000000000000UL;
 	for(int i=0;i < 8; i++)	s->codeword = answ[i] << (i * 8) | s->codeword;
-fprintf(stderr,"codeword: %I64lx\n",s->codeword);
+// fprintf(stderr,"codeword: %I64lx\n",s->codeword);
 }
 
 void _vc_kernel09(const unsigned char in, unsigned char *answ)

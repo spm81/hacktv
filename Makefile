@@ -36,7 +36,7 @@ install:
 	cp -f hacktv $(PREFIX)/usr/local/bin/
 
 clean:
-	rm -f *.o *.d hacktv hacktv.exe
+	rm -f *.o *.d hacktv
 
 -include $(OBJS:.o=.d)
 
