@@ -126,6 +126,35 @@ static _vc_block_t _tac_blocks[] = {
 	},
 };
 
+static _vc_block_t _xtea_blocks[] = {
+        {
+                0x07, 0x1A298F7C70F4F65UL,
+                {
+                        { 0x20 },
+                        { },
+                        { },
+                        { },
+                        { },
+                        { },
+                        { 0xE8,0x49,0x09,0x92,0x1F,0x93,0x20,0x74,0xCE,0x62,0xE4,0xEA,0xB3,0xB3,0xBF,0x8A,0xE3,0xDF,0x26,0x99,0x5E,0x2F,0x0B,0xFB,0x8E,0x45,0x22,0x94,0x4A,0x1A,0x8E }
+                } 
+        },
+        {
+                0x07, 0xD491B336D3D54BAUL,
+                {
+                        /* Modify the following line to change the channel name displayed by the decoder.
+                         * The third byte is 0x60 + number of characters, followed by the ASCII characters themselves. */
+                        { 0x20,0x00,0x69,0x20,0x20,0x20,0x48,0x41,0x43,0x4B,0x54,0x56 },
+                        { },
+                        { },
+                        { },
+                        { },
+                        { },
+                        { 0xE8,0x49,0x09,0x92,0x1F,0x93,0x20,0x74,0xCE,0x62,0xE4,0xD5,0x04,0x5E,0x8E,0x54,0x91,0x58,0xFF,0x44,0x32,0x72,0xBB,0xEF,0x29,0x8E,0x3C,0x98,0x41,0xD1,0x33 }
+                }
+        },
+};
+
 /* Blocks for VC1 conditional-access sample, taken from Sky Movies and modified, */
 /* requires an active Sky 09 card to decode */
 static _vc_block_t _sky09_blocks[] = {
@@ -374,7 +403,7 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2, const char
 			}
 			else if (strcmp(key, "xtea") == 0) 
 			{
-				s->blocks    = _tac_blocks;
+				s->blocks    = _xtea_blocks;
 				s->block_len = 2;
 				_vc_rand_seed_xtea(&s->blocks[0]);
 				_vc_rand_seed_xtea(&s->blocks[1]);
@@ -462,7 +491,7 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2, const char *ke
 				if(mode && strcmp(mode,"conditional") == 0 && strcmp(key,"tac") == 0){
 					/* KEY-UPDATE as plaintext */
 					if((s->counter & 0x3F) == 0x10)
-					{ //fprintf(stderr,"KEY-UPDATE BLOCK \n");
+					{ fprintf(stderr,"KEY-UPDATE BLOCK \n");
 						s->blocks[s->block].messages[((s->counter >> 3) & 7) % 7][2] = eeprom+1;
 						for(x = 0; x < 16; x++){ s->blocks[s->block].messages[((s->counter >> 3) & 7) % 7][11+x] = tac_key[keyctr] & 0xff; keyctr++;}
 						eeprom++;
@@ -474,7 +503,7 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2, const char *ke
 				if(mode && strcmp(mode,"conditional") == 0 && strcmp(key,"sky09") == 0){
                                         /* KEY UPDATE as plaintext */
 					if((s->counter & 0x3F) == 0x10)
-                                        { //fprintf(stderr,"KEY-UPDATE BLOCK \n");
+                                        { fprintf(stderr,"KEY-UPDATE BLOCK \n");
                                                 s->blocks[s->block].messages[((s->counter >> 3) & 7) % 7][2] = eeprom+7;
                                                 for(x = 0; x < 16; x++){ s->blocks[s->block].messages[((s->counter >> 3) & 7) % 7][11+x] = sky09_key[keyctr] & 0xff; keyctr++;}
                                                 eeprom++;
@@ -486,9 +515,10 @@ void vc_render_line(vc_t *s, const char *mode, const char *mode2, const char *ke
 				for(crc = x = 0; x < 31; x++)
 				{
 					crc += s->message[x] = s->blocks[s->block].messages[((s->counter >> 3) & 7) % 7][x];
-					//fprintf(stderr,"%02x ",s->blocks[s->block].messages[((s->counter >> 3) & 7) % 7][x]);
+					fprintf(stderr,"%02x ",s->blocks[s->block].messages[((s->counter >> 3) & 7) % 7][x]);
 				}
-				//fprintf(stderr,"\n");
+				s->blocks[s->block].messages[((s->counter >> 3) & 7) % 7][31] = crc;
+				fprintf(stderr,"%02x \n",s->blocks[s->block].messages[((s->counter >> 3) & 7) % 7][31]);
 				s->message[x] = ~crc + 1;
 			}
 			
